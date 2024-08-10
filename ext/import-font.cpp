@@ -140,12 +140,25 @@ FT_Error readFreetypeOutline(Shape &output, FT_Outline *outline) {
     return error;
 }
 
+const char* getErrorMessage(FT_Error err)
+{
+#undef FTERRORS_H_
+#define FT_ERRORDEF( e, v, s )  case e: return s;
+#define FT_ERROR_START_LIST     switch (err) {
+#define FT_ERROR_END_LIST       }
+#include FT_ERRORS_H
+    return "(Unknown error)";
+}
+
 FontHandle * loadFont(FreetypeHandle *library, const char *filename) {
     if (!library)
         return NULL;
     FontHandle *handle = new FontHandle;
     FT_Error error = FT_New_Face(library->library, filename, 0, &handle->face);
     if (error) {
+        // ADDITION: Error printing
+        printf("Error creating new free type face. Reason: %s\n", getErrorMessage(error));
+        // ------------------------
         delete handle;
         return NULL;
     }

@@ -11,6 +11,7 @@ option(MSDFGEN_USE_SKIA "Build with the Skia library" ON)
 option(MSDFGEN_INSTALL "Generate installation target" OFF)
 option(MSDFGEN_DYNAMIC_RUNTIME "Link dynamic runtime library instead of static" OFF)
 option(BUILD_SHARED_LIBS "Generate dynamic library files instead of static" OFF)
+option(MSDFGEN_FREETYPE_SUBDIRECTORY "Freetype has been included as a subdirectoy" OFF)
 
 if(MSDFGEN_CORE_ONLY AND MSDFGEN_USE_VCPKG)
     message(STATUS "Option MSDFGEN_USE_VCPKG ignored due to MSDFGEN_CORE_ONLY - core has no dependencies")
@@ -129,7 +130,7 @@ endif()
 
 # Extensions library
 if(NOT MSDFGEN_CORE_ONLY)
-    if(NOT TARGET Freetype::Freetype)
+    if(NOT TARGET Freetype::Freetype AND NOT MSDFGEN_FREETYPE_SUBDIRECTORY)
         find_package(Freetype REQUIRED)
     endif()
     if(NOT MSDFGEN_DISABLE_SVG AND NOT TARGET tinyxml2::tinyxml2)
@@ -158,7 +159,13 @@ if(NOT MSDFGEN_CORE_ONLY)
     if(MSDFGEN_DISABLE_VARIABLE_FONTS)
         target_compile_definitions(msdfgen-ext PUBLIC MSDFGEN_DISABLE_VARIABLE_FONTS)
     endif()
-    target_link_libraries(msdfgen-ext PRIVATE Freetype::Freetype msdfgen::msdfgen-core)
+    target_link_libraries(msdfgen-ext PRIVATE msdfgen::msdfgen-core)
+    # link against Freetype::Freetype if it's not a subdirectoy
+    if(NOT MSDFGEN_FREETYPE_SUBDIRECTORY)
+        target_link_libraries(msdfgen-ext PRIVATE Freetype::Freetype)
+    else()
+        target_link_libraries(msdfgen-ext PRIVATE freetype)
+    endif()
     target_include_directories(msdfgen-ext
         PUBLIC
             $<INSTALL_INTERFACE:include/msdfgen>
